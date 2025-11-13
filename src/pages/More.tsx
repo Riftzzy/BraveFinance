@@ -22,7 +22,11 @@ const menuItems = [
   { icon: User, label: "Profile", path: "/profile" },
 ];
 
+import { useNavigate } from "react-router-dom";
+
 export default function More() {
+  const navigate = useNavigate();
+
   return (
     <PageContainer>
       <PageHeader
@@ -34,10 +38,11 @@ export default function More() {
         {/* Menu Items */}
         <Card>
           <CardContent className="p-0">
-            {menuItems.map((item, index) => (
+            {menuItems.map((item) => (
               <Button
                 key={item.label}
                 variant="ghost"
+                onClick={() => navigate(item.path)}
                 className="w-full justify-between h-14 px-4 rounded-none border-b border-border last:border-0 touch-target"
               >
                 <div className="flex items-center gap-3">
