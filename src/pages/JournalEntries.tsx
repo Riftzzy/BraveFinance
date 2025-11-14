@@ -3,24 +3,24 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Plus, Trash2 } from "lucide-react";
-import { format } from "date-fns";
+import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { CurrencyInput } from "@/components/forms/CurrencyInput";
+import { AccountSelector } from "@/components/forms/AccountSelector";
+import { DatePicker } from "@/components/forms/DatePicker";
+import { FormField } from "@/components/forms/FormField";
 
 export default function JournalEntries() {
   const [date, setDate] = useState<Date>(new Date());
   const [entries, setEntries] = useState([
-    { id: 1, account: "", debit: "", credit: "" },
-    { id: 2, account: "", debit: "", credit: "" },
+    { id: 1, account: "", debit: 0, credit: 0 },
+    { id: 2, account: "", debit: 0, credit: 0 },
   ]);
 
   const addEntry = () => {
-    setEntries([...entries, { id: entries.length + 1, account: "", debit: "", credit: "" }]);
+    setEntries([...entries, { id: entries.length + 1, account: "", debit: 0, credit: 0 }]);
   };
 
   const removeEntry = (id: number) => {
@@ -29,8 +29,8 @@ export default function JournalEntries() {
     }
   };
 
-  const totalDebit = entries.reduce((sum, e) => sum + (parseFloat(e.debit) || 0), 0);
-  const totalCredit = entries.reduce((sum, e) => sum + (parseFloat(e.credit) || 0), 0);
+  const totalDebit = entries.reduce((sum, e) => sum + e.debit, 0);
+  const totalCredit = entries.reduce((sum, e) => sum + e.credit, 0);
   const isBalanced = totalDebit === totalCredit && totalDebit > 0;
 
   return (
@@ -46,42 +46,33 @@ export default function JournalEntries() {
           <CardTitle>Entry Details</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Date */}
-          <div className="space-y-2">
-            <Label htmlFor="date">Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal touch-target",
-                    !date && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar mode="single" selected={date} onSelect={(d) => d && setDate(d)} />
-              </PopoverContent>
-            </Popover>
+          {/* Entry Info */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField label="Date" htmlFor="date" required>
+              <DatePicker value={date} onChange={(d) => d && setDate(d)} />
+            </FormField>
+            <FormField label="Reference" htmlFor="reference">
+              <Input
+                id="reference"
+                placeholder="JE-001"
+                className="touch-target"
+              />
+            </FormField>
           </div>
 
           {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+          <FormField label="Description" htmlFor="description">
             <Textarea
               id="description"
               placeholder="Enter transaction description..."
               className="touch-target"
             />
-          </div>
+          </FormField>
 
           {/* Journal Entries */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label>Journal Entries</Label>
+              <span className="text-sm font-medium">Journal Entries</span>
               <Button
                 type="button"
                 variant="outline"
@@ -95,33 +86,60 @@ export default function JournalEntries() {
             </div>
 
             <div className="space-y-3">
-              {entries.map((entry) => (
-                <div key={entry.id} className="flex gap-2 items-start">
-                  <div className="flex-1 space-y-2">
-                    <Input placeholder="Account" className="touch-target" />
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input
-                        placeholder="Debit"
-                        type="number"
-                        className="touch-target font-mono-financial"
+              {entries.map((entry, index) => (
+                <div key={entry.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 p-4 bg-muted/30 rounded-lg">
+                  <div className="md:col-span-5">
+                    <FormField label="Account" htmlFor={`account-${entry.id}`} required>
+                      <AccountSelector
+                        value={entry.account}
+                        onChange={(accountId) => {
+                          const newEntries = [...entries];
+                          newEntries[index].account = accountId;
+                          setEntries(newEntries);
+                        }}
                       />
-                      <Input
-                        placeholder="Credit"
-                        type="number"
-                        className="touch-target font-mono-financial"
+                    </FormField>
+                  </div>
+                  <div className="md:col-span-3">
+                    <FormField label="Debit" htmlFor={`debit-${entry.id}`}>
+                      <CurrencyInput
+                        id={`debit-${entry.id}`}
+                        value={entry.debit}
+                        onChange={(value) => {
+                          const newEntries = [...entries];
+                          newEntries[index].debit = value;
+                          newEntries[index].credit = 0;
+                          setEntries(newEntries);
+                        }}
                       />
-                    </div>
+                    </FormField>
+                  </div>
+                  <div className="md:col-span-3">
+                    <FormField label="Credit" htmlFor={`credit-${entry.id}`}>
+                      <CurrencyInput
+                        id={`credit-${entry.id}`}
+                        value={entry.credit}
+                        onChange={(value) => {
+                          const newEntries = [...entries];
+                          newEntries[index].credit = value;
+                          newEntries[index].debit = 0;
+                          setEntries(newEntries);
+                        }}
+                      />
+                    </FormField>
                   </div>
                   {entries.length > 2 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeEntry(entry.id)}
-                      className="mt-1 touch-target text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="md:col-span-1 flex items-end pb-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeEntry(entry.id)}
+                        className="touch-target text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   )}
                 </div>
               ))}

@@ -3,12 +3,18 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { CurrencyInput } from "@/components/forms/CurrencyInput";
+import { DatePicker } from "@/components/forms/DatePicker";
+import { FormField } from "@/components/forms/FormField";
+import { FileUpload } from "@/components/forms/FileUpload";
 
 export default function Invoices() {
+  const [invoiceDate, setInvoiceDate] = useState<Date>(new Date());
+  const [dueDate, setDueDate] = useState<Date>();
+  const [attachments, setAttachments] = useState<any[]>([]);
   const [lineItems, setLineItems] = useState([
     { id: 1, description: "", quantity: 1, rate: 0, amount: 0 },
   ]);
@@ -45,28 +51,24 @@ export default function Invoices() {
         <CardContent className="space-y-6">
           {/* Customer Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="customer">Customer</Label>
+            <FormField label="Customer" htmlFor="customer" required>
               <Input id="customer" placeholder="Select customer..." className="touch-target" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="invoiceDate">Invoice Date</Label>
-              <Input id="invoiceDate" type="date" className="touch-target" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="dueDate">Due Date</Label>
-              <Input id="dueDate" type="date" className="touch-target" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="invoiceNumber">Invoice Number</Label>
+            </FormField>
+            <FormField label="Invoice Date" htmlFor="invoiceDate" required>
+              <DatePicker value={invoiceDate} onChange={(d) => d && setInvoiceDate(d)} />
+            </FormField>
+            <FormField label="Due Date" htmlFor="dueDate" required>
+              <DatePicker value={dueDate} onChange={setDueDate} />
+            </FormField>
+            <FormField label="Invoice Number" htmlFor="invoiceNumber" required>
               <Input id="invoiceNumber" placeholder="INV-001" className="touch-target" />
-            </div>
+            </FormField>
           </div>
 
           {/* Line Items */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label>Line Items</Label>
+              <span className="text-sm font-medium">Line Items</span>
               <Button
                 type="button"
                 variant="outline"
@@ -91,18 +93,17 @@ export default function Invoices() {
                       <Input
                         placeholder="Qty"
                         type="number"
+                        min="1"
                         className="touch-target"
                       />
-                      <Input
-                        placeholder="Rate"
-                        type="number"
-                        className="touch-target font-mono-financial"
+                      <CurrencyInput
+                        placeholder="0.00"
+                        className="touch-target"
                       />
-                      <Input
-                        placeholder="Amount"
-                        type="number"
-                        className="touch-target font-mono-financial"
+                      <CurrencyInput
+                        placeholder="0.00"
                         disabled
+                        className="touch-target"
                       />
                     </div>
                   </div>
@@ -122,15 +123,25 @@ export default function Invoices() {
             </div>
           </div>
 
+          {/* Attachments */}
+          <FormField label="Attachments" htmlFor="attachments">
+            <FileUpload
+              value={attachments}
+              onChange={setAttachments}
+              accept=".pdf,.jpg,.jpeg,.png"
+              maxSize={5}
+              maxFiles={3}
+            />
+          </FormField>
+
           {/* Notes */}
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
+          <FormField label="Notes" htmlFor="notes">
             <Textarea
               id="notes"
               placeholder="Additional notes or payment terms..."
               className="touch-target"
             />
-          </div>
+          </FormField>
 
           {/* Totals */}
           <div className="border-t pt-4 space-y-3">
