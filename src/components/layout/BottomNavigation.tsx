@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 const navigationItems = [
   {
     name: "Dashboard",
-    path: "/",
+    path: "/dashboard",
     icon: Home,
   },
   {
@@ -38,7 +38,7 @@ export const BottomNavigation = () => {
           <NavLink
             key={item.name}
             to={item.path}
-            end={item.path === "/"}
+            end={item.path === "/dashboard"}
             className="flex flex-col items-center justify-center flex-1 h-full touch-target transition-smooth text-muted-foreground hover:text-foreground"
             activeClassName="text-primary"
           >

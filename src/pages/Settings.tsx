@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { UserRoleManagement } from "@/components/admin/UserRoleManagement";
 
 export default function Settings() {
   return (
@@ -16,6 +17,8 @@ export default function Settings() {
       />
 
       <div className="space-y-6">
+        {/* User Role Management - Admin Only */}
+        <UserRoleManagement />
         {/* Company Information */}
         <Card>
           <CardHeader>

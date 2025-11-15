@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,8 +8,89 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Camera, Shield } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 
 export default function Profile() {
+  const { user, profile, roles, refreshProfile } = useAuth();
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [department, setDepartment] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (profile) {
+      setFirstName(profile.first_name || "");
+      setLastName(profile.last_name || "");
+      setPhone(profile.phone || "");
+      setDepartment(profile.department || "");
+    }
+  }, [profile]);
+
+  const handleUpdateProfile = async () => {
+    if (!user) return;
+
+    setLoading(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        first_name: firstName,
+        last_name: lastName,
+        phone,
+        department,
+      })
+      .eq('id', user.id);
+
+    setLoading(false);
+
+    if (error) {
+      toast.error("Failed to update profile");
+    } else {
+      toast.success("Profile updated successfully");
+      refreshProfile();
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords don't match");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+    setLoading(false);
+
+    if (error) {
+      toast.error("Failed to update password");
+    } else {
+      toast.success("Password updated successfully");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    }
+  };
+
+  const getInitials = () => {
+    if (!profile) return "??";
+    const first = profile.first_name?.[0] || "";
+    const last = profile.last_name?.[0] || "";
+    return (first + last).toUpperCase() || "??";
+  };
+
   return (
     <PageContainer>
       <PageHeader
@@ -24,7 +106,7 @@ export default function Profile() {
               <div className="relative">
                 <Avatar className="h-24 w-24">
                   <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
-                    JD
+                    {getInitials()}
                   </AvatarFallback>
                 </Avatar>
                 <Button
@@ -36,8 +118,17 @@ export default function Profile() {
                 </Button>
               </div>
               <div className="text-center">
-                <p className="font-semibold text-lg">John Doe</p>
-                <p className="text-sm text-muted-foreground">Finance Manager</p>
+                <p className="font-semibold text-lg">
+                  {profile?.first_name} {profile?.last_name}
+                </p>
+                <p className="text-sm text-muted-foreground">{profile?.email}</p>
+                <div className="flex gap-2 mt-2 justify-center flex-wrap">
+                  {roles.map((role) => (
+                    <Badge key={role.role} variant="secondary">
+                      {role.role.replace('_', ' ')}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             </div>
           </CardContent>
@@ -55,7 +146,8 @@ export default function Profile() {
                 <Input
                   id="firstName"
                   placeholder="John"
-                  defaultValue="John"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
                   className="touch-target"
                 />
               </div>
@@ -64,7 +156,8 @@ export default function Profile() {
                 <Input
                   id="lastName"
                   placeholder="Doe"
-                  defaultValue="Doe"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
                   className="touch-target"
                 />
               </div>
@@ -74,8 +167,8 @@ export default function Profile() {
               <Input
                 id="email"
                 type="email"
-                placeholder="john.doe@example.com"
-                defaultValue="john.doe@example.com"
+                value={profile?.email || ""}
+                disabled
                 className="touch-target"
               />
             </div>
@@ -85,7 +178,8 @@ export default function Profile() {
                 id="phone"
                 type="tel"
                 placeholder="+1 234 567 8900"
-                defaultValue="+1 234 567 8900"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 className="touch-target"
               />
             </div>
@@ -94,10 +188,18 @@ export default function Profile() {
               <Input
                 id="department"
                 placeholder="Finance"
-                defaultValue="Finance"
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
                 className="touch-target"
               />
             </div>
+            <Button 
+              onClick={handleUpdateProfile} 
+              disabled={loading}
+              className="w-full touch-target"
+            >
+              {loading ? "Updating..." : "Update Profile"}
+            </Button>
           </CardContent>
         </Card>
 
@@ -115,6 +217,8 @@ export default function Profile() {
               <Input
                 id="currentPassword"
                 type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
                 className="touch-target"
               />
             </div>
@@ -124,6 +228,8 @@ export default function Profile() {
               <Input
                 id="newPassword"
                 type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
                 className="touch-target"
               />
             </div>
@@ -132,11 +238,18 @@ export default function Profile() {
               <Input
                 id="confirmPassword"
                 type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 className="touch-target"
               />
             </div>
-            <Button variant="outline" className="w-full touch-target">
-              Update Password
+            <Button 
+              onClick={handleChangePassword}
+              disabled={loading}
+              variant="outline" 
+              className="w-full touch-target"
+            >
+              {loading ? "Updating..." : "Update Password"}
             </Button>
           </CardContent>
         </Card>
@@ -163,9 +276,6 @@ export default function Profile() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Save Button */}
-        <Button className="w-full touch-target">Save Changes</Button>
       </div>
     </PageContainer>
   );
