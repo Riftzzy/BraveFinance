@@ -4,6 +4,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "./components/layout/AppLayout";
+import { AuthProvider } from "./contexts/AuthContext";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import Index from "./pages/Index";
+import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Transactions from "./pages/Transactions";
 import Reports from "./pages/Reports";
@@ -28,36 +32,116 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AppLayout>
+        <AuthProvider>
           <Routes>
-            {/* Primary Navigation */}
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/transactions" element={<Transactions />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/budget" element={<Budget />} />
-            <Route path="/more" element={<More />} />
+            {/* Public Routes */}
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
             
-            {/* Ledger Routes */}
-            <Route path="/ledger" element={<Ledger />} />
-            <Route path="/ledger/journal" element={<JournalEntries />} />
-            
-            {/* Payables Routes */}
-            <Route path="/payables" element={<Payables />} />
-            <Route path="/payables/vendors" element={<Vendors />} />
-            
-            {/* Receivables Routes */}
-            <Route path="/receivables" element={<Receivables />} />
-            <Route path="/receivables/invoices" element={<Invoices />} />
-            
-            {/* Other Routes */}
-            <Route path="/payroll" element={<Payroll />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/profile" element={<Profile />} />
+            {/* Protected Routes */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Dashboard />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/transactions" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Transactions />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/reports" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Reports />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/budget" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Budget />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/more" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <More />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/ledger" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Ledger />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/ledger/journal" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <JournalEntries />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/payables" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Payables />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/payables/vendors" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Vendors />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/receivables" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Receivables />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/receivables/invoices" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Invoices />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/payroll" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Payroll />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/settings" element={
+              <ProtectedRoute requiredRole="admin">
+                <AppLayout>
+                  <Settings />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Profile />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </AppLayout>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

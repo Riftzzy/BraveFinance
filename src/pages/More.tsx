@@ -23,9 +23,11 @@ const menuItems = [
 ];
 
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function More() {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
 
   return (
     <PageContainer>
@@ -62,6 +64,7 @@ export default function More() {
           <CardContent className="p-0">
             <Button
               variant="ghost"
+              onClick={signOut}
               className="w-full justify-between h-14 px-4 rounded-none text-destructive hover:text-destructive hover:bg-destructive/10 touch-target"
             >
               <div className="flex items-center gap-3">
