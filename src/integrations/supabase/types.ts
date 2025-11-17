@@ -64,6 +64,90 @@ export type Database = {
           },
         ]
       }
+      approvals: {
+        Row: {
+          approval_level: number | null
+          approved_at: string | null
+          approved_by: string | null
+          comments: string | null
+          created_at: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          requested_at: string | null
+          requested_by: string | null
+          status: Database["public"]["Enums"]["approval_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          approval_level?: number | null
+          approved_at?: string | null
+          approved_by?: string | null
+          comments?: string | null
+          created_at?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          requested_at?: string | null
+          requested_by?: string | null
+          status?: Database["public"]["Enums"]["approval_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          approval_level?: number | null
+          approved_at?: string | null
+          approved_by?: string | null
+          comments?: string | null
+          created_at?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          requested_at?: string | null
+          requested_by?: string | null
+          status?: Database["public"]["Enums"]["approval_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          ip_address: unknown
+          new_data: Json | null
+          old_data: Json | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          ip_address?: unknown
+          new_data?: Json | null
+          old_data?: Json | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          ip_address?: unknown
+          new_data?: Json | null
+          old_data?: Json | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       budget_lines: {
         Row: {
           account_id: string
@@ -458,6 +542,48 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_transactions: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          end_date: string | null
+          frequency: string
+          id: string
+          is_active: boolean | null
+          last_run_date: string | null
+          next_run_date: string
+          start_date: string
+          transaction_template: Json
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          end_date?: string | null
+          frequency: string
+          id?: string
+          is_active?: boolean | null
+          last_run_date?: string | null
+          next_run_date: string
+          start_date: string
+          transaction_template: Json
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          end_date?: string | null
+          frequency?: string
+          id?: string
+          is_active?: boolean | null
+          last_run_date?: string | null
+          next_run_date?: string
+          start_date?: string
+          transaction_template?: Json
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       transaction_lines: {
         Row: {
           account_id: string
@@ -659,6 +785,7 @@ export type Database = {
     Enums: {
       account_type: "asset" | "liability" | "equity" | "revenue" | "expense"
       app_role: "admin" | "finance_manager" | "accountant" | "view_only"
+      approval_status: "pending" | "approved" | "rejected" | "cancelled"
       budget_status: "draft" | "active" | "closed"
       invoice_status: "draft" | "sent" | "paid" | "overdue" | "cancelled"
       payment_status:
@@ -797,6 +924,7 @@ export const Constants = {
     Enums: {
       account_type: ["asset", "liability", "equity", "revenue", "expense"],
       app_role: ["admin", "finance_manager", "accountant", "view_only"],
+      approval_status: ["pending", "approved", "rejected", "cancelled"],
       budget_status: ["draft", "active", "closed"],
       invoice_status: ["draft", "sent", "paid", "overdue", "cancelled"],
       payment_status: [
