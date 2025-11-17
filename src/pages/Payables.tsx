@@ -3,19 +3,23 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Users, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-const invoices = [
-  { id: "INV-001", vendor: "Office Supplies Co", amount: 1250, dueDate: "2025-11-20", status: "overdue" },
-  { id: "INV-002", vendor: "Tech Solutions Ltd", amount: 5400, dueDate: "2025-11-25", status: "pending" },
-  { id: "INV-003", vendor: "Utilities Provider", amount: 890, dueDate: "2025-11-28", status: "pending" },
-  { id: "INV-004", vendor: "Marketing Agency", amount: 3200, dueDate: "2025-12-05", status: "scheduled" },
-];
+import { useInvoices } from "@/hooks/useInvoices";
+import { ExportButton } from "@/components/ExportButton";
+import { format } from "date-fns";
 
 export default function Payables() {
   const navigate = useNavigate();
+  const { invoices, isLoading } = useInvoices("payable");
+
+  const totalOutstanding = invoices?.reduce((sum, inv) => sum + (inv.total_amount || 0), 0) || 0;
+  const overdueInvoices = invoices?.filter(inv => 
+    inv.status === 'overdue' || (new Date(inv.due_date) < new Date() && inv.status !== 'paid')
+  ) || [];
+  const overdueAmount = overdueInvoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
 
   return (
     <PageContainer>
@@ -23,10 +27,17 @@ export default function Payables() {
         title="Accounts Payable"
         subtitle="Manage vendor invoices and payments"
         actions={
-          <Button className="touch-target">
-            <Plus className="h-4 w-4" />
-            New Invoice
-          </Button>
+          <div className="flex gap-2">
+            <ExportButton 
+              data={invoices || []} 
+              filename="payables"
+              disabled={!invoices || invoices.length === 0}
+            />
+            <Button className="touch-target">
+              <Plus className="h-4 w-4" />
+              New Invoice
+            </Button>
+          </div>
         }
       />
 
@@ -37,9 +48,13 @@ export default function Payables() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Outstanding</p>
-                <p className="text-2xl font-bold font-mono-financial mt-1">
-                  $10,740
-                </p>
+                {isLoading ? (
+                  <Skeleton className="h-8 w-32 mt-1" />
+                ) : (
+                  <p className="text-2xl font-bold font-mono-financial mt-1">
+                    ${totalOutstanding.toLocaleString()}
+                  </p>
+                )}
               </div>
               <div className="h-12 w-12 rounded-full bg-warning/10 flex items-center justify-center">
                 <AlertCircle className="h-6 w-6 text-warning" />
@@ -53,9 +68,13 @@ export default function Payables() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Overdue</p>
-                <p className="text-2xl font-bold font-mono-financial mt-1 text-destructive">
-                  $1,250
-                </p>
+                {isLoading ? (
+                  <Skeleton className="h-8 w-32 mt-1" />
+                ) : (
+                  <p className="text-2xl font-bold font-mono-financial mt-1 text-destructive">
+                    ${overdueAmount.toLocaleString()}
+                  </p>
+                )}
               </div>
               <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
                 <AlertCircle className="h-6 w-6 text-destructive" />
@@ -68,8 +87,14 @@ export default function Payables() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Active Vendors</p>
-                <p className="text-2xl font-bold font-mono-financial mt-1">24</p>
+                <p className="text-sm text-muted-foreground">Total Invoices</p>
+                {isLoading ? (
+                  <Skeleton className="h-8 w-16 mt-1" />
+                ) : (
+                  <p className="text-2xl font-bold font-mono-financial mt-1">
+                    {invoices?.length || 0}
+                  </p>
+                )}
               </div>
               <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
                 <Users className="h-6 w-6 text-primary" />
@@ -104,50 +129,77 @@ export default function Payables() {
             </TabsList>
 
             <TabsContent value="all" className="space-y-3 mt-4">
-              {invoices.map((invoice) => (
-                <div
-                  key={invoice.id}
-                  className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-smooth cursor-pointer touch-target"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="font-medium">{invoice.id}</p>
-                      <Badge
-                        variant={
-                          invoice.status === "overdue"
-                            ? "destructive"
-                            : invoice.status === "scheduled"
-                            ? "secondary"
-                            : "default"
-                        }
-                      >
-                        {invoice.status}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">{invoice.vendor}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Due: {invoice.dueDate}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-mono-financial font-semibold text-lg">
-                      ${invoice.amount.toLocaleString()}
-                    </p>
-                  </div>
+              {isLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-32 w-full" />
+                  ))}
                 </div>
-              ))}
+              ) : invoices && invoices.length > 0 ? (
+                invoices.map((invoice) => (
+                  <div
+                    key={invoice.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-smooth cursor-pointer touch-target"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <p className="font-semibold">{invoice.invoice_number}</p>
+                        <Badge
+                          variant={
+                            invoice.status === "overdue" ? "destructive" :
+                            invoice.status === "paid" ? "default" :
+                            "secondary"
+                          }
+                        >
+                          {invoice.status}
+                        </Badge>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">
+                          Vendor: <span className="font-medium text-foreground">
+                            {invoice.vendor?.vendor_name || "N/A"}
+                          </span>
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Due: <span className="font-medium text-foreground">
+                            {format(new Date(invoice.due_date), "MMM dd, yyyy")}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-mono-financial font-bold text-lg">
+                        ${(invoice.total_amount || 0).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  No invoices found
+                </div>
+              )}
             </TabsContent>
 
-            <TabsContent value="overdue">
-              <p className="text-center text-muted-foreground py-8">
-                {invoices.filter((i) => i.status === "overdue").length} overdue invoice(s)
-              </p>
+            <TabsContent value="overdue" className="mt-4">
+              {isLoading ? (
+                <Skeleton className="h-32 w-full" />
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  {overdueInvoices.length} overdue invoice{overdueInvoices.length !== 1 ? "s" : ""}
+                </div>
+              )}
             </TabsContent>
 
-            <TabsContent value="pending">
-              <p className="text-center text-muted-foreground py-8">
-                {invoices.filter((i) => i.status === "pending").length} pending invoice(s)
-              </p>
+            <TabsContent value="pending" className="mt-4">
+              {isLoading ? (
+                <Skeleton className="h-32 w-full" />
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  {invoices?.filter(inv => inv.status === 'pending').length || 0} pending invoice
+                  {invoices?.filter(inv => inv.status === 'pending').length !== 1 ? "s" : ""}
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>

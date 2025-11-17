@@ -3,16 +3,22 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Search, Mail, Phone } from "lucide-react";
-
-const vendors = [
-  { id: 1, name: "Office Supplies Co", email: "contact@officesupplies.com", phone: "+1 234 567 8900", balance: 1250, status: "active" },
-  { id: 2, name: "Tech Solutions Ltd", email: "info@techsolutions.com", phone: "+1 234 567 8901", balance: 5400, status: "active" },
-  { id: 3, name: "Utilities Provider", email: "billing@utilities.com", phone: "+1 234 567 8902", balance: 890, status: "active" },
-  { id: 4, name: "Marketing Agency", email: "hello@marketing.com", phone: "+1 234 567 8903", balance: 0, status: "active" },
-];
+import { useState } from "react";
+import { useVendors } from "@/hooks/useVendors";
+import { ExportButton } from "@/components/ExportButton";
 
 export default function Vendors() {
+  const { vendors, isLoading } = useVendors();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredVendors = vendors?.filter(vendor =>
+    vendor.vendor_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    vendor.email?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <PageContainer>
       <PageHeader
@@ -20,10 +26,17 @@ export default function Vendors() {
         subtitle="Manage vendor contacts and terms"
         showBack
         actions={
-          <Button className="touch-target">
-            <Plus className="h-4 w-4" />
-            New Vendor
-          </Button>
+          <div className="flex gap-2">
+            <ExportButton 
+              data={vendors || []} 
+              filename="vendors"
+              disabled={!vendors || vendors.length === 0}
+            />
+            <Button className="touch-target">
+              <Plus className="h-4 w-4" />
+              New Vendor
+            </Button>
+          </div>
         }
       />
 
@@ -34,55 +47,80 @@ export default function Vendors() {
           <Input
             placeholder="Search vendors..."
             className="pl-10 touch-target"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
       </div>
 
       {/* Vendors List */}
-      <div className="space-y-3">
-        {vendors.map((vendor) => (
-          <Card key={vendor.id}>
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <h3 className="font-semibold text-lg">{vendor.name}</h3>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Vendor ID: {vendor.id.toString().padStart(4, "0")}
-                  </p>
-                </div>
-                {vendor.balance > 0 && (
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground">Outstanding</p>
-                    <p className="font-mono-financial font-semibold text-warning">
-                      ${vendor.balance.toLocaleString()}
+      {isLoading ? (
+        <div className="space-y-3">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-48 w-full" />
+          ))}
+        </div>
+      ) : filteredVendors && filteredVendors.length > 0 ? (
+        <div className="space-y-3">
+          {filteredVendors.map((vendor) => (
+            <Card key={vendor.id}>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h3 className="font-semibold text-lg">{vendor.vendor_name}</h3>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {vendor.vendor_code ? `Code: ${vendor.vendor_code}` : "No code"}
                     </p>
                   </div>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Mail className="h-4 w-4" />
-                  <span>{vendor.email}</span>
+                  <div className="flex flex-col items-end gap-2">
+                    <Badge variant={vendor.is_active ? "default" : "secondary"}>
+                      {vendor.is_active ? "Active" : "Inactive"}
+                    </Badge>
+                    {vendor.current_balance && vendor.current_balance > 0 && (
+                      <div className="text-right">
+                        <p className="text-xs text-muted-foreground">Outstanding</p>
+                        <p className="font-mono-financial font-semibold text-warning">
+                          ${vendor.current_balance.toLocaleString()}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Phone className="h-4 w-4" />
-                  <span>{vendor.phone}</span>
-                </div>
-              </div>
 
-              <div className="flex gap-2 mt-4">
-                <Button variant="outline" size="sm" className="flex-1 touch-target">
-                  View Details
-                </Button>
-                <Button variant="outline" size="sm" className="flex-1 touch-target">
-                  Transactions
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                <div className="space-y-2">
+                  {vendor.email && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Mail className="h-4 w-4" />
+                      <span>{vendor.email}</span>
+                    </div>
+                  )}
+                  {vendor.phone && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Phone className="h-4 w-4" />
+                      <span>{vendor.phone}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-2 mt-4">
+                  <Button variant="outline" size="sm" className="flex-1 touch-target">
+                    View Details
+                  </Button>
+                  <Button variant="outline" size="sm" className="flex-1 touch-target">
+                    Transactions
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="p-12 text-center text-muted-foreground">
+            {searchQuery ? "No vendors found matching your search" : "No vendors found"}
+          </CardContent>
+        </Card>
+      )}
     </PageContainer>
   );
 }

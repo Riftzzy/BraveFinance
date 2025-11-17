@@ -5,18 +5,21 @@ import { Button } from "@/components/ui/button";
 import { Plus, Search, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
-
-const accounts = [
-  { id: "1000", name: "Cash", type: "Asset", balance: 125430 },
-  { id: "1100", name: "Accounts Receivable", type: "Asset", balance: 48290 },
-  { id: "2000", name: "Accounts Payable", type: "Liability", balance: 32180 },
-  { id: "3000", name: "Owner's Equity", type: "Equity", balance: 250000 },
-  { id: "4000", name: "Revenue", type: "Revenue", balance: 185000 },
-  { id: "5000", name: "Operating Expenses", type: "Expense", balance: 52300 },
-];
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useState } from "react";
+import { useAccounts } from "@/hooks/useAccounts";
+import { ExportButton } from "@/components/ExportButton";
 
 export default function Ledger() {
   const navigate = useNavigate();
+  const { accounts, isLoading } = useAccounts();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredAccounts = accounts?.filter(account => 
+    account.account_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    account.account_number.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <PageContainer>
@@ -24,10 +27,17 @@ export default function Ledger() {
         title="General Ledger"
         subtitle="Chart of accounts and balances"
         actions={
-          <Button onClick={() => navigate("/ledger/journal")} className="touch-target">
-            <Plus className="h-4 w-4" />
-            New Entry
-          </Button>
+          <div className="flex gap-2">
+            <ExportButton 
+              data={accounts || []} 
+              filename="chart-of-accounts"
+              disabled={!accounts || accounts.length === 0}
+            />
+            <Button onClick={() => navigate("/ledger/journal")} className="touch-target">
+              <Plus className="h-4 w-4" />
+              New Entry
+            </Button>
+          </div>
         }
       />
 
@@ -38,6 +48,8 @@ export default function Ledger() {
           <Input
             placeholder="Search accounts..."
             className="pl-10 touch-target"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
       </div>
@@ -67,32 +79,49 @@ export default function Ledger() {
           <CardTitle>Chart of Accounts</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {accounts.map((account) => (
-              <div
-                key={account.id}
-                className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-smooth cursor-pointer touch-target"
-              >
-                <div>
-                  <p className="font-medium">{account.name}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                      {account.id}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {account.type}
-                    </span>
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-20 w-full" />
+              ))}
+            </div>
+          ) : filteredAccounts && filteredAccounts.length > 0 ? (
+            <div className="space-y-3">
+              {filteredAccounts.map((account) => (
+                <div
+                  key={account.id}
+                  className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-smooth cursor-pointer touch-target"
+                >
+                  <div>
+                    <p className="font-medium">{account.account_name}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                        {account.account_number}
+                      </span>
+                      <Badge variant="outline" className="text-xs">
+                        {account.account_type}
+                      </Badge>
+                      {!account.is_active && (
+                        <Badge variant="secondary" className="text-xs">
+                          Inactive
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-mono-financial font-semibold">
+                      ${(account.current_balance || 0).toLocaleString()}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Balance</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-mono-financial font-semibold">
-                    ${account.balance.toLocaleString()}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Balance</p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-muted-foreground">
+              {searchQuery ? "No accounts found matching your search" : "No accounts found"}
+            </div>
+          )}
         </CardContent>
       </Card>
     </PageContainer>
