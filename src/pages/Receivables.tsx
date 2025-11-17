@@ -3,19 +3,23 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Users, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-const invoices = [
-  { id: "INV-501", customer: "ABC Corporation", amount: 8500, dueDate: "2025-11-22", status: "outstanding" },
-  { id: "INV-502", customer: "XYZ Industries", amount: 12400, dueDate: "2025-11-28", status: "outstanding" },
-  { id: "INV-503", customer: "Global Trading Inc", amount: 6700, dueDate: "2025-12-01", status: "outstanding" },
-  { id: "INV-504", customer: "Tech Innovators", amount: 3200, dueDate: "2025-11-18", status: "overdue" },
-];
+import { useInvoices } from "@/hooks/useInvoices";
+import { ExportButton } from "@/components/ExportButton";
+import { format } from "date-fns";
 
 export default function Receivables() {
   const navigate = useNavigate();
+  const { invoices, isLoading } = useInvoices("receivable");
+
+  const totalOutstanding = invoices?.reduce((sum, inv) => sum + (inv.total_amount || 0), 0) || 0;
+  const overdueInvoices = invoices?.filter(inv => 
+    inv.status === 'overdue' || (new Date(inv.due_date) < new Date() && inv.status !== 'paid')
+  ) || [];
+  const overdueAmount = overdueInvoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
 
   return (
     <PageContainer>
@@ -23,10 +27,17 @@ export default function Receivables() {
         title="Accounts Receivable"
         subtitle="Manage customer invoices and payments"
         actions={
-          <Button onClick={() => navigate("/receivables/invoices")} className="touch-target">
-            <Plus className="h-4 w-4" />
-            New Invoice
-          </Button>
+          <div className="flex gap-2">
+            <ExportButton 
+              data={invoices || []} 
+              filename="receivables"
+              disabled={!invoices || invoices.length === 0}
+            />
+            <Button onClick={() => navigate("/receivables/invoices")} className="touch-target">
+              <Plus className="h-4 w-4" />
+              New Invoice
+            </Button>
+          </div>
         }
       />
 
@@ -37,9 +48,13 @@ export default function Receivables() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Outstanding</p>
-                <p className="text-2xl font-bold font-mono-financial mt-1">
-                  $30,800
-                </p>
+                {isLoading ? (
+                  <Skeleton className="h-8 w-32 mt-1" />
+                ) : (
+                  <p className="text-2xl font-bold font-mono-financial mt-1">
+                    ${totalOutstanding.toLocaleString()}
+                  </p>
+                )}
               </div>
               <div className="h-12 w-12 rounded-full bg-success/10 flex items-center justify-center">
                 <TrendingUp className="h-6 w-6 text-success" />
@@ -53,9 +68,13 @@ export default function Receivables() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Overdue</p>
-                <p className="text-2xl font-bold font-mono-financial mt-1 text-destructive">
-                  $3,200
-                </p>
+                {isLoading ? (
+                  <Skeleton className="h-8 w-32 mt-1" />
+                ) : (
+                  <p className="text-2xl font-bold font-mono-financial mt-1 text-destructive">
+                    ${overdueAmount.toLocaleString()}
+                  </p>
+                )}
               </div>
               <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
                 <TrendingUp className="h-6 w-6 text-destructive" />
@@ -68,8 +87,14 @@ export default function Receivables() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Active Customers</p>
-                <p className="text-2xl font-bold font-mono-financial mt-1">42</p>
+                <p className="text-sm text-muted-foreground">Total Invoices</p>
+                {isLoading ? (
+                  <Skeleton className="h-8 w-16 mt-1" />
+                ) : (
+                  <p className="text-2xl font-bold font-mono-financial mt-1">
+                    {invoices?.length || 0}
+                  </p>
+                )}
               </div>
               <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
                 <Users className="h-6 w-6 text-primary" />
@@ -102,48 +127,77 @@ export default function Receivables() {
             </TabsList>
 
             <TabsContent value="all" className="space-y-3 mt-4">
-              {invoices.map((invoice) => (
-                <div
-                  key={invoice.id}
-                  className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-smooth cursor-pointer touch-target"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="font-medium">{invoice.id}</p>
-                      <Badge
-                        variant={
-                          invoice.status === "overdue"
-                            ? "destructive"
-                            : "default"
-                        }
-                      >
-                        {invoice.status}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">{invoice.customer}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Due: {invoice.dueDate}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-mono-financial font-semibold text-lg">
-                      ${invoice.amount.toLocaleString()}
-                    </p>
-                  </div>
+              {isLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-32 w-full" />
+                  ))}
                 </div>
-              ))}
+              ) : invoices && invoices.length > 0 ? (
+                invoices.map((invoice) => (
+                  <div
+                    key={invoice.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-smooth cursor-pointer touch-target"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <p className="font-semibold">{invoice.invoice_number}</p>
+                        <Badge
+                          variant={
+                            invoice.status === "overdue" ? "destructive" :
+                            invoice.status === "paid" ? "default" :
+                            "secondary"
+                          }
+                        >
+                          {invoice.status}
+                        </Badge>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">
+                          Customer: <span className="font-medium text-foreground">
+                            {invoice.customer?.customer_name || "N/A"}
+                          </span>
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Due: <span className="font-medium text-foreground">
+                            {format(new Date(invoice.due_date), "MMM dd, yyyy")}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-mono-financial font-bold text-lg">
+                        ${(invoice.total_amount || 0).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  No invoices found
+                </div>
+              )}
             </TabsContent>
 
-            <TabsContent value="overdue">
-              <p className="text-center text-muted-foreground py-8">
-                {invoices.filter((i) => i.status === "overdue").length} overdue invoice(s)
-              </p>
+            <TabsContent value="overdue" className="mt-4">
+              {isLoading ? (
+                <Skeleton className="h-32 w-full" />
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  {overdueInvoices.length} overdue invoice{overdueInvoices.length !== 1 ? "s" : ""}
+                </div>
+              )}
             </TabsContent>
 
-            <TabsContent value="outstanding">
-              <p className="text-center text-muted-foreground py-8">
-                {invoices.filter((i) => i.status === "outstanding").length} outstanding invoice(s)
-              </p>
+            <TabsContent value="outstanding" className="mt-4">
+              {isLoading ? (
+                <Skeleton className="h-32 w-full" />
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  {invoices?.filter(inv => inv.status === 'outstanding' || inv.status === 'pending').length || 0} outstanding invoice
+                  {invoices?.filter(inv => inv.status === 'outstanding' || inv.status === 'pending').length !== 1 ? "s" : ""}
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>
