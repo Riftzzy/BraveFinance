@@ -10,16 +10,25 @@ import { useNavigate } from "react-router-dom";
 import { useInvoices } from "@/hooks/useInvoices";
 import { ExportButton } from "@/components/ExportButton";
 import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Payables() {
   const navigate = useNavigate();
   const { invoices, isLoading } = useInvoices("payable");
+  const { toast } = useToast();
 
   const totalOutstanding = invoices?.reduce((sum, inv) => sum + (inv.total_amount || 0), 0) || 0;
   const overdueInvoices = invoices?.filter(inv => 
     inv.status === 'overdue' || (new Date(inv.due_date) < new Date() && inv.status !== 'paid')
   ) || [];
   const overdueAmount = overdueInvoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
+
+  const handleNewInvoice = () => {
+    toast({
+      title: "Coming Soon",
+      description: "Invoice creation form will be available soon",
+    });
+  };
 
   return (
     <PageContainer>
@@ -33,7 +42,7 @@ export default function Payables() {
               filename="payables"
               disabled={!invoices || invoices.length === 0}
             />
-            <Button className="touch-target">
+            <Button onClick={handleNewInvoice} className="touch-target">
               <Plus className="h-4 w-4" />
               New Invoice
             </Button>

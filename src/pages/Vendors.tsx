@@ -9,15 +9,24 @@ import { Plus, Search, Mail, Phone } from "lucide-react";
 import { useState } from "react";
 import { useVendors } from "@/hooks/useVendors";
 import { ExportButton } from "@/components/ExportButton";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Vendors() {
   const { vendors, isLoading } = useVendors();
   const [searchQuery, setSearchQuery] = useState("");
+  const { toast } = useToast();
 
   const filteredVendors = vendors?.filter(vendor =>
     vendor.vendor_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     vendor.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleNewVendor = () => {
+    toast({
+      title: "Coming Soon",
+      description: "Vendor creation form will be available soon",
+    });
+  };
 
   return (
     <PageContainer>
@@ -32,7 +41,7 @@ export default function Vendors() {
               filename="vendors"
               disabled={!vendors || vendors.length === 0}
             />
-            <Button className="touch-target">
+            <Button onClick={handleNewVendor} className="touch-target">
               <Plus className="h-4 w-4" />
               New Vendor
             </Button>
