@@ -9,12 +9,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { useBudgets } from "@/hooks/useBudgets";
 import { ExportButton } from "@/components/ExportButton";
-import { useToast } from "@/hooks/use-toast";
+import { NewBudgetDialog } from "@/components/budget/NewBudgetDialog";
 
 export default function Budget() {
   const { budgets, isLoading } = useBudgets();
   const [searchQuery, setSearchQuery] = useState("");
-  const { toast } = useToast();
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const filteredBudgets = budgets?.filter(budget =>
     budget.budget_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -22,10 +22,7 @@ export default function Budget() {
   );
 
   const handleNewBudget = () => {
-    toast({
-      title: "Coming Soon",
-      description: "Budget creation form will be available soon",
-    });
+    setDialogOpen(true);
   };
 
   const getStatusVariant = (status: string) => {
@@ -43,6 +40,8 @@ export default function Budget() {
 
   return (
     <PageContainer>
+      <NewBudgetDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+
       <PageHeader
         title="Budget"
         subtitle="Budget planning and analysis"

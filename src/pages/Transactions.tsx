@@ -9,12 +9,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { useTransactions } from "@/hooks/useTransactions";
 import { ExportButton } from "@/components/ExportButton";
-import { useToast } from "@/hooks/use-toast";
+import { NewTransactionDialog } from "@/components/transactions/NewTransactionDialog";
 
 export default function Transactions() {
   const { transactions, isLoading } = useTransactions();
   const [searchQuery, setSearchQuery] = useState("");
-  const { toast } = useToast();
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const filteredTransactions = transactions?.filter(transaction =>
     transaction.transaction_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -22,10 +22,7 @@ export default function Transactions() {
   );
 
   const handleNewTransaction = () => {
-    toast({
-      title: "Coming Soon",
-      description: "Transaction creation form will be available soon",
-    });
+    setDialogOpen(true);
   };
 
   const getStatusVariant = (status: string) => {
@@ -43,6 +40,8 @@ export default function Transactions() {
 
   return (
     <PageContainer>
+      <NewTransactionDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+
       <PageHeader
         title="Transactions"
         subtitle="Manage your financial transactions"
