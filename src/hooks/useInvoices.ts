@@ -12,7 +12,7 @@ export function useInvoices(type?: "payable" | "receivable") {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: invoices, isLoading, error } = useQuery({
+  const { data: invoices, isLoading, error, refetch } = useQuery({
     queryKey: ["invoices", type],
     queryFn: async () => {
       let query = supabase
@@ -119,6 +119,7 @@ export function useInvoices(type?: "payable" | "receivable") {
     invoices,
     isLoading,
     error,
+    refetch,
     createInvoice: createInvoice.mutate,
     updateInvoice: updateInvoice.mutate,
   };

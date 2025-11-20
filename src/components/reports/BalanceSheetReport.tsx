@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, Printer } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import { exportToExcel, exportToPDF } from "@/utils/exportData";
 
 // Mock data
 const balanceSheetData = {
@@ -48,10 +49,25 @@ export function BalanceSheetReport() {
   const totalEquity = balanceSheetData.equity.reduce((sum, item) => sum + item.amount, 0);
 
   const handleExport = (format: "pdf" | "excel") => {
-    toast({
-      title: "Export Started",
-      description: `Exporting Balance Sheet as ${format.toUpperCase()}...`,
-    });
+    try {
+      const exportData = [
+        ...balanceSheetData.assets.current.map(item => ({ category: "Current Assets", ...item })),
+        ...balanceSheetData.assets.fixed.map(item => ({ category: "Fixed Assets", ...item })),
+        ...balanceSheetData.liabilities.current.map(item => ({ category: "Current Liabilities", ...item })),
+        ...balanceSheetData.liabilities.longTerm.map(item => ({ category: "Long-term Liabilities", ...item })),
+        ...balanceSheetData.equity.map(item => ({ category: "Equity", ...item })),
+      ];
+
+      if (format === "excel") {
+        exportToExcel(exportData, "balance-sheet");
+        toast.success("Balance Sheet exported to Excel");
+      } else {
+        exportToPDF(exportData, "balance-sheet", "Balance Sheet Report");
+        toast.success("Balance Sheet exported as PDF");
+      }
+    } catch (error) {
+      toast.error("Failed to export report");
+    }
   };
 
   const handlePrint = () => {

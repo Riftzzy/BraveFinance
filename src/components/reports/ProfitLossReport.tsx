@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, Printer } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import { exportToExcel, exportToPDF } from "@/utils/exportData";
 
 // Mock data
 const plData = {
@@ -41,10 +42,24 @@ export function ProfitLossReport() {
   const netIncome = operatingIncome - totalOtherExpenses;
 
   const handleExport = (format: "pdf" | "excel") => {
-    toast({
-      title: "Export Started",
-      description: `Exporting P&L Statement as ${format.toUpperCase()}...`,
-    });
+    try {
+      const exportData = [
+        ...plData.revenue.map(item => ({ section: "Revenue", ...item })),
+        ...plData.costOfGoodsSold.map(item => ({ section: "Cost of Goods Sold", ...item })),
+        ...plData.operatingExpenses.map(item => ({ section: "Operating Expenses", ...item })),
+        ...plData.otherExpenses.map(item => ({ section: "Other Expenses", ...item })),
+      ];
+
+      if (format === "excel") {
+        exportToExcel(exportData, "profit-loss");
+        toast.success("P&L Statement exported to Excel");
+      } else {
+        exportToPDF(exportData, "profit-loss", "Profit & Loss Statement");
+        toast.success("P&L Statement exported as PDF");
+      }
+    } catch (error) {
+      toast.error("Failed to export report");
+    }
   };
 
   const handlePrint = () => {

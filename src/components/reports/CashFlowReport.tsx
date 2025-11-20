@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, Printer } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import { exportToExcel, exportToPDF } from "@/utils/exportData";
 
 // Mock data
 const cashFlowData = {
@@ -36,10 +37,23 @@ export function CashFlowReport() {
   const endingCash = cashFlowData.beginning + netChange;
 
   const handleExport = (format: "pdf" | "excel") => {
-    toast({
-      title: "Export Started",
-      description: `Exporting Cash Flow Statement as ${format.toUpperCase()}...`,
-    });
+    try {
+      const exportData = [
+        ...cashFlowData.operating.map(item => ({ activity: "Operating", ...item })),
+        ...cashFlowData.investing.map(item => ({ activity: "Investing", ...item })),
+        ...cashFlowData.financing.map(item => ({ activity: "Financing", ...item })),
+      ];
+
+      if (format === "excel") {
+        exportToExcel(exportData, "cash-flow");
+        toast.success("Cash Flow Statement exported to Excel");
+      } else {
+        exportToPDF(exportData, "cash-flow", "Cash Flow Statement");
+        toast.success("Cash Flow Statement exported as PDF");
+      }
+    } catch (error) {
+      toast.error("Failed to export report");
+    }
   };
 
   const handlePrint = () => {

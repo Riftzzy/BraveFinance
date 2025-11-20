@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,18 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Users, TrendingUp } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Users, TrendingUp } from "lucide-react";
 import { useInvoices } from "@/hooks/useInvoices";
 import { ExportButton } from "@/components/ExportButton";
+import { NewReceivablesDialog } from "@/components/receivables/NewReceivablesDialog";
 import { format } from "date-fns";
 
 export default function Receivables() {
-  const navigate = useNavigate();
-  const { invoices, isLoading } = useInvoices("receivable");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const { invoices, isLoading, refetch } = useInvoices("receivable");
 
   const totalOutstanding = invoices?.reduce((sum, inv) => sum + (inv.total_amount || 0), 0) || 0;
-  const overdueInvoices = invoices?.filter(inv => 
+  const overdueInvoices = invoices?.filter(inv =>
     inv.status === 'overdue' || (new Date(inv.due_date) < new Date() && inv.status !== 'paid')
   ) || [];
   const overdueAmount = overdueInvoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
@@ -28,15 +29,19 @@ export default function Receivables() {
         subtitle="Manage customer invoices and payments"
         actions={
           <div className="flex gap-2">
-            <ExportButton 
-              data={invoices || []} 
+            <ExportButton
+              data={invoices || []}
               filename="receivables"
               disabled={!invoices || invoices.length === 0}
             />
-            <Button onClick={() => navigate("/receivables/invoices")} className="touch-target">
-              <Plus className="h-4 w-4" />
-              New Invoice
-            </Button>
+            <NewReceivablesDialog
+              open={dialogOpen}
+              onOpenChange={setDialogOpen}
+              onReceivableAdded={() => {
+                setDialogOpen(false);
+                refetch?.();
+              }}
+            />
           </div>
         }
       />
